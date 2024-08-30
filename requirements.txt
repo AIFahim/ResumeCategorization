@@ -4,3 +4,4 @@ joblib
 matplotlib
 wordcloud
 seaborn
+contractions
