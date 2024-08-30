@@ -4,13 +4,15 @@ import os
 from textcleaner import TextCleaner
 
 
-class StratifiedTrainTestSplit:
-    def __init__(self, data_dir='data', test_size=0.2, random_state=42):
+class StratifiedTrainValTestSplit:
+    def __init__(self, data_dir='data', test_size=0.2, val_size=0.1, random_state=42):
         self.data_dir = data_dir
         self.resume_csv_path = os.path.join(data_dir, 'Resume.csv')
         self.train_data_path = os.path.join(data_dir, 'train_data.csv')
+        self.val_data_path = os.path.join(data_dir, 'val_data.csv')
         self.test_data_path = os.path.join(data_dir, 'test_data.csv')
         self.test_size = test_size
+        self.val_size = val_size
         self.random_state = random_state
         self.text_cleaner = TextCleaner()  # Initialize TextCleaner
 
@@ -23,15 +25,22 @@ class StratifiedTrainTestSplit:
         self.resume_data['cleaned_resume'] = self.resume_data['Resume_str'].apply(lambda x: self.text_cleaner.clean_text(x))
 
     def stratified_split(self):
-        # Perform a stratified train-test split
-        strat_split = StratifiedShuffleSplit(n_splits=1, test_size=self.test_size, random_state=self.random_state)
-        for train_index, test_index in strat_split.split(self.resume_data, self.resume_data['Category']):
+        # Split the dataset into train and temp (temp will be split into validation and test)
+        strat_split = StratifiedShuffleSplit(n_splits=1, test_size=self.test_size + self.val_size, random_state=self.random_state)
+        for train_index, temp_index in strat_split.split(self.resume_data, self.resume_data['Category']):
             self.train_set = self.resume_data.loc[train_index]
-            self.test_set = self.resume_data.loc[test_index]
+            self.temp_set = self.resume_data.loc[temp_index]
+
+        # Split temp into validation and test
+        strat_split_temp = StratifiedShuffleSplit(n_splits=1, test_size=self.test_size / (self.test_size + self.val_size), random_state=self.random_state)
+        for val_index, test_index in strat_split_temp.split(self.temp_set, self.temp_set['Category']):
+            self.val_set = self.temp_set.loc[val_index]
+            self.test_set = self.temp_set.loc[test_index]
 
     def save_data(self):
-        # Save the processed training and test sets
+        # Save the processed training, validation, and test sets
         self.train_set.to_csv(self.train_data_path, index=False)
+        self.val_set.to_csv(self.val_data_path, index=False)
         self.test_set.to_csv(self.test_data_path, index=False)
 
     def run(self):
@@ -39,13 +48,13 @@ class StratifiedTrainTestSplit:
         self.load_data()
         print("Preprocessing data...")
         self.preprocess_data()
-        print("Performing stratified train-test split...")
+        print("Performing stratified train-validation-test split...")
         self.stratified_split()
         print("Saving processed data...")
         self.save_data()
-        print("Data split complete. Training and test data saved.")
+        print("Data split complete. Training, validation, and test data saved.")
 
 # Usage
 if __name__ == "__main__":
-    stratified_splitter = StratifiedTrainTestSplit()
+    stratified_splitter = StratifiedTrainValTestSplit()
     stratified_splitter.run()
