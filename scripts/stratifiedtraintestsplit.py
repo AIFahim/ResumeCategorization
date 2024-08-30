@@ -28,14 +28,14 @@ class StratifiedTrainValTestSplit:
         # Split the dataset into train and temp (temp will be split into validation and test)
         strat_split = StratifiedShuffleSplit(n_splits=1, test_size=self.test_size + self.val_size, random_state=self.random_state)
         for train_index, temp_index in strat_split.split(self.resume_data, self.resume_data['Category']):
-            self.train_set = self.resume_data.loc[train_index]
-            self.temp_set = self.resume_data.loc[temp_index]
+            self.train_set = self.resume_data.loc[train_index].reset_index(drop=True)
+            self.temp_set = self.resume_data.loc[temp_index].reset_index(drop=True)
 
         # Split temp into validation and test
         strat_split_temp = StratifiedShuffleSplit(n_splits=1, test_size=self.test_size / (self.test_size + self.val_size), random_state=self.random_state)
         for val_index, test_index in strat_split_temp.split(self.temp_set, self.temp_set['Category']):
-            self.val_set = self.temp_set.loc[val_index]
-            self.test_set = self.temp_set.loc[test_index]
+            self.val_set = self.temp_set.loc[val_index].reset_index(drop=True)
+            self.test_set = self.temp_set.loc[test_index].reset_index(drop=True)
 
     def save_data(self):
         # Save the processed training, validation, and test sets
