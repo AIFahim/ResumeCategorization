@@ -93,8 +93,6 @@ git clone https://github.com/yourusername/resume-categorization.git cd resume-ca
 2. **Install Dependencies**:
 pip install -r requirements.txt
 
-markdown
-Copy code
 
 3. **Run the Preprocessing and Training**:
 Execute the notebooks or scripts provided to preprocess the data, train the model, and evaluate its performance.
