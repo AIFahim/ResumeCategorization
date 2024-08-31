@@ -1,85 +1,78 @@
 import pandas as pd
-from sklearn.svm import SVC
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.neural_network import MLPClassifier
 import numpy as np
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, classification_report
-from sklearn.model_selection import train_test_split
-import optuna
 import torch
-from optuna.visualization import plot_optimization_history, plot_param_importances
-import matplotlib.pyplot as plt
+from transformers import BertForSequenceClassification, BertTokenizer, Trainer, TrainingArguments
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from datasets import Dataset
 
-# Load the dataset with embeddings (ensure embeddings are stored as numpy arrays in the dataframe)
+# Load the dataset (using the cleaned data directly)
 train_set = pd.read_csv('data/train_data.csv')
 val_set = pd.read_csv('data/val_data.csv')
 test_set = pd.read_csv('data/test_data.csv')
 
-X_train = np.vstack(train_set['embeddings'].apply(eval))
-y_train = train_set['Category']
-X_val = np.vstack(val_set['embeddings'].apply(eval))
-y_val = val_set['Category']
-X_test = np.vstack(test_set['embeddings'].apply(eval))
-y_test = test_set['Category']
+# Convert to Hugging Face dataset format
+train_ds = Dataset.from_pandas(train_set)
+val_ds = Dataset.from_pandas(val_set)
+test_ds = Dataset.from_pandas(test_set)
 
-# Define objective function for Optuna
-def objective(trial):
-    model_name = trial.suggest_categorical('model', ['SVM', 'RandomForest', 'MLP'])
+# Load pre-trained model and tokenizer
+model_id = 'ahmedheakl/bert-resume-classification'
+tokenizer = BertTokenizer.from_pretrained(model_id)
+model = BertForSequenceClassification.from_pretrained(model_id, num_labels=43)
 
-    if model_name == 'SVM':
-        C = trial.suggest_float('C', 0.1, 10.0)
-        kernel = trial.suggest_categorical('kernel', ['linear', 'rbf', 'poly'])
-        model = SVC(C=C, kernel=kernel, probability=True)
-    elif model_name == 'RandomForest':
-        n_estimators = trial.suggest_int('n_estimators', 50, 300)
-        max_depth = trial.suggest_int('max_depth', 5, 50)
-        model = RandomForestClassifier(n_estimators=n_estimators, max_depth=max_depth)
-    else:
-        hidden_layer_sizes = trial.suggest_categorical('hidden_layer_sizes', [(50, 50), (100, 50), (100, 100)])
-        learning_rate_init = trial.suggest_float('learning_rate_init', 0.001, 0.1)
-        model = MLPClassifier(hidden_layer_sizes=hidden_layer_sizes, learning_rate_init=learning_rate_init, max_iter=300)
+# Tokenize the dataset
+def tokenize_function(examples):
+    return tokenizer(examples['cleaned_resume'], padding="max_length", truncation=True)
 
-    model.fit(X_train, y_train)
-    preds = model.predict(X_val)
-    accuracy = accuracy_score(y_val, preds)
+train_ds = train_ds.map(tokenize_function, batched=True)
+val_ds = val_ds.map(tokenize_function, batched=True)
+test_ds = test_ds.map(tokenize_function, batched=True)
 
-    return accuracy
+train_ds.set_format(type='torch', columns=['input_ids', 'attention_mask', 'Category'])
+val_ds.set_format(type='torch', columns=['input_ids', 'attention_mask', 'Category'])
+test_ds.set_format(type='torch', columns=['input_ids', 'attention_mask', 'Category'])
 
-# Optimize
-study = optuna.create_study(direction='maximize')
-study.optimize(objective, n_trials=50)
+# Define the compute metrics function
+def compute_metrics(pred):
+    labels = pred.label_ids
+    preds = pred.predictions.argmax(-1)
+    precision = precision_score(labels, preds, average='weighted')
+    recall = recall_score(labels, preds, average='weighted')
+    f1 = f1_score(labels, preds, average='weighted')
+    acc = accuracy_score(labels, preds)
+    return {"accuracy": acc, "f1": f1, "precision": precision, "recall": recall}
 
-# Train the best model on the full training data
-best_model_name = study.best_params['model']
-if best_model_name == 'SVM':
-    best_model = SVC(C=study.best_params['C'], kernel=study.best_params['kernel'], probability=True)
-elif best_model_name == 'RandomForest':
-    best_model = RandomForestClassifier(n_estimators=study.best_params['n_estimators'], max_depth=study.best_params['max_depth'])
-else:
-    best_model = MLPClassifier(hidden_layer_sizes=study.best_params['hidden_layer_sizes'],
-                               learning_rate_init=study.best_params['learning_rate_init'], max_iter=300)
+# Set up training arguments
+training_args = TrainingArguments(
+    output_dir="./results",
+    learning_rate=2e-5,
+    per_device_train_batch_size=8,
+    per_device_eval_batch_size=8,
+    num_train_epochs=3,
+    weight_decay=0.01,
+    evaluation_strategy="epoch",
+    save_strategy="epoch",
+    load_best_model_at_end=True,
+    metric_for_best_model="accuracy",
+)
 
-best_model.fit(X_train, y_train)
+# Initialize the Trainer
+trainer = Trainer(
+    model=model,
+    args=training_args,
+    train_dataset=train_ds,
+    eval_dataset=val_ds,
+    tokenizer=tokenizer,
+    compute_metrics=compute_metrics,
+)
+
+# Train the model
+trainer.train()
 
 # Evaluate on the test set
-test_preds = best_model.predict(X_test)
-accuracy = accuracy_score(y_test, test_preds)
-precision = precision_score(y_test, test_preds, average='weighted')
-recall = recall_score(y_test, test_preds, average='weighted')
-f1 = f1_score(y_test, test_preds, average='weighted')
+eval_results = trainer.evaluate(eval_dataset=test_ds)
+print(f"Test Results: {eval_results}")
 
-print(f"Test Accuracy: {accuracy:.4f}")
-print(f"Test Precision: {precision:.4f}")
-print(f"Test Recall: {recall:.4f}")
-print(f"Test F1-Score: {f1:.4f}")
-print(classification_report(y_test, test_preds))
-
-# Visualize Optuna results
-fig1 = plot_optimization_history(study)
-fig2 = plot_param_importances(study)
-fig1.show()
-fig2.show()
-
-# Save figures
-fig1.write_image("optuna_optimization_history.png")
-fig2.write_image("optuna_param_importances.png")
+# Save the fine-tuned model
+model.save_pretrained("./fine_tuned_bert_resume_classification")
+tokenizer.save_pretrained("./fine_tuned_bert_resume_classification")
