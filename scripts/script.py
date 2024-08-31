@@ -124,7 +124,7 @@ def main():
         sys.exit(1)
 
     # Google Drive file ID
-    file_id = "1oQD8tPI1svFcR9AjSW6ANRoXYaTLHDuJ"  # Replace with your actual Google Drive file ID
+    file_id = "1oQD8tPI1svFcR9AjSW6ANRoXYaTLHDuJ"  #  Google Drive file ID
 
     # Model directory path
     model_dir = "./model_dir"
