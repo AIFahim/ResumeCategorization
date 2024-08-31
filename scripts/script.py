@@ -24,10 +24,15 @@ def download_and_extract_zip_from_gdrive(file_id, extract_to):
     with zipfile.ZipFile(output, 'r') as zip_ref:
         zip_ref.extractall(extract_to)
 
+
 def load_model_and_tokenizer(model_dir):
     """
     Load the fine-tuned model and tokenizer from the specified directory.
     """
+    # Check if "checkpoint-1744" is already in the path
+    if "checkpoint-1744" not in model_dir:
+        model_dir = os.path.join(model_dir, "checkpoint-1744")
+
     model = BertForSequenceClassification.from_pretrained(model_dir)
     tokenizer = BertTokenizer.from_pretrained(model_dir)
 
@@ -37,6 +42,7 @@ def load_model_and_tokenizer(model_dir):
     label_encoder.classes_ = label_classes
 
     return model, tokenizer, label_encoder
+
 
 def extract_text_from_pdf(pdf_path):
     """
@@ -121,7 +127,7 @@ def main():
     file_id = "1oQD8tPI1svFcR9AjSW6ANRoXYaTLHDuJ"  # Replace with your actual Google Drive file ID
 
     # Model directory path
-    model_dir = "./model_dir/checkpoint-1744"
+    model_dir = "./model_dir"
 
     # Download and extract the zip file to the model directory
     download_and_extract_zip_from_gdrive(file_id, model_dir)
