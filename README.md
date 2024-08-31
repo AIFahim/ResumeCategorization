@@ -102,9 +102,6 @@ Execute the notebooks or scripts provided to preprocess the data, train the mode
 4. **Run the Categorization Script**:
 python script.py path/to/dir
 
-markdown
-Copy code
-
 5. **Review the Results**:
 - Check the categorized resumes in the output directory.
 - Review the `categorized_resumes.csv` file for the categorization results.
