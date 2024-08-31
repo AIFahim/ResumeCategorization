@@ -44,6 +44,15 @@ This project aims to design, implement, and train a machine-learning model that 
 - **Optimizer**: AdamW with weight decay
 - **Metrics**: Accuracy, Precision, Recall, F1-Score
 
+### Model Checkpoint and Tokenizer
+
+The fine-tuned BERT model checkpoint, along with the label encoder and tokenizer, has been saved and can be downloaded from Google Drive:
+
+- [Model Checkpoint with Label Encoder and Tokenizer](https://drive.google.com/file/d/1oQD8tPI1svFcR9AjSW6ANRoXYaTLHDuJ/view?usp=sharing)
+
+This includes everything needed for inference: the model weights, the tokenizer configuration, and the label encoder used during training.
+
+
 ### 3. Script Development
 
 - **Script Name**: `script.py`
