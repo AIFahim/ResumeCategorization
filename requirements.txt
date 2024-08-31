@@ -7,6 +7,5 @@ seaborn
 contractions
 langchain_text_splitters
 PyPDF2
-zipfile
 gdown
 datasets
