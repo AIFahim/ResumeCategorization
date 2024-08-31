@@ -2,7 +2,7 @@
 
 ## Objective
 
-The goal of this project is to design, implement, and train a machine learning model that can automatically categorize resumes based on their domain (e.g., sales, marketing). The project also includes developing a script that processes a batch of resumes, categorizes them, and outputs results to both directory structures and a CSV file.
+This project aims to design, implement, and train a machine-learning model that automatically categorizes resumes based on their domain. The project also includes developing a script that processes a batch of resumes, categorizes them, and outputs results to both directory structures and a CSV file.
 
 ## Task Breakdown
 
@@ -19,8 +19,10 @@ The goal of this project is to design, implement, and train a machine learning m
     - Lowercasing text
     - Removing numbers, punctuation, HTML tags, URLs, and emojis
     - Fixing contractions and encoding issues
-    - Removing excessive whitespace
-  - The dataset was split into training, validation, and test sets using stratified sampling to ensure each set is representative of the entire dataset.
+    - Removing excessive whitespace </br>
+  Text Cleaning process is managed in the script [`scripts
+/textcleaner.py`](https://github.com/AIFahim/ResumeCategorization/blob/master/scripts/textcleaner.py).
+  - The dataset was split into training, validation, and test sets using stratified sampling to ensure each set is representative of the entire dataset. This process is managed in the script [`scripts/stratifiedtraintestsplit.py`](https://github.com/AIFahim/ResumeCategorization/blob/master/scripts/stratifiedtraintestsplit.py).
 
 ### 2. Model Selection and Training
 
@@ -29,13 +31,13 @@ The goal of this project is to design, implement, and train a machine learning m
 - **Rationale**: BERT is a state-of-the-art model in natural language processing tasks, including text classification. Its pre-trained nature allows for fine-tuning on specific tasks like resume categorization, making it an ideal choice for this project.
   
 - **Training**:
-  - The BERT model `ahmedheakl/bert-resume-classification` was fine-tuned for 11 epochs to achieve better results.
+  - The BERT model [`ahmedheakl/bert-resume-classification`](https://github.com/AIFahim/ResumeCategorization/blob/master/notebooks/training_notebook.ipynb) was fine-tuned for 11 epochs to achieve better results.
   - Fine-tuning was conducted using the training set, and the model's performance was validated on a separate validation set.
   - The best model, based on evaluation accuracy, was saved for inference.
 
 #### Training Configuration:
 
-- **Model ID**: `ahmedheakl/bert-resume-classification`
+- **Model ID**: `ahmedheakl/bert-resume-classification` from HuggingFace
 - **Learning Rate**: 2e-5
 - **Batch Size**: 8 (for both training and evaluation)
 - **Epochs**: 11
@@ -49,7 +51,7 @@ The goal of this project is to design, implement, and train a machine learning m
   - The script accepts a directory of resumes (in PDF format), categorizes them using the trained BERT model, and moves them to their respective category folders (creating folders if necessary).
   - It also generates a CSV file named `categorized_resumes.csv` with two columns: `filename` and `category`.
 - **Usage**:
-python `script.py path/to/dir`
+python `scripts/script.py path/to/dir`
 
 
 Replace `path/to/dir` with the path to the directory containing the PDF resumes.
@@ -68,13 +70,24 @@ Replace `path/to/dir` with the path to the directory containing the PDF resumes.
 - **Accuracy**: Overall correctness of the model's predictions.
 - **Precision**: Proportion of true positive predictions out of all positive predictions.
 - **Recall**: Proportion of true positive predictions out of all actual positives.
-- **F1-Score**: Harmonic mean of precision and recall, providing a balance between the two.
+- **F1-Score**: Harmonic mean of precision and recall, balancing the two.
 
 ### 6. Visualizations and Insights
 
+### Visualizations and Insights
+
 - **Category Distribution**: A bar chart visualizing the distribution of resume categories.
+
+  ![Category Distribution](https://github.com/AIFahim/ResumeCategorization/blob/master/plots/category_distribution.png)
+
 - **Word Count Distribution**: A histogram showing the distribution of word counts across resumes.
+
+  ![Word Count Distribution](https://github.com/AIFahim/ResumeCategorization/blob/master/plots/word_count_distribution.png)
+
 - **Word Cloud**: A word cloud visualization of the most common words in the resumes.
+
+  ![Word Cloud](https://github.com/AIFahim/ResumeCategorization/blob/master/plots/word_cloud.png)
+
 
 ### 7. Deliverables
 
@@ -83,6 +96,19 @@ Replace `path/to/dir` with the path to the directory containing the PDF resumes.
 - **Script**: `script.py` for categorizing resumes.
 - **Sample Output**: `categorized_resumes.csv` as a sample output after running the script on a test set.
 - **Documentation**: This README file with instructions and details.
+
+### Future Directions
+
+- **Advanced Modeling**:
+  - Consider using a larger language model (LLM) for even better classification performance.
+  - Precompute text embeddings (using Sentence Transformer with Chunking) and use a machine learning or deep learning model for classification.
+
+- **Further Fine-tuning**:
+  - More epochs or hyperparameter tuning could improve the model's performance, especially in resource-constrained environments where fewer epochs were used.
+
+- **Expanding Categories**:
+  - The model can be expanded to handle more specific categories or industries as needed.
+
 
 ## How to Run
 
@@ -104,6 +130,3 @@ python script.py path/to/dir
 - Check the categorized resumes in the output directory.
 - Review the `categorized_resumes.csv` file for the categorization results.
 
-## Conclusion
-
-This project demonstrates a practical application of BERT for categorizing resumes i
