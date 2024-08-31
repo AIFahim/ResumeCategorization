@@ -6,6 +6,7 @@ wordcloud
 seaborn
 contractions
 langchain_text_splitters
-sentence_transformers
-tiktoken
-fastembed
+PyPDF2
+zipfile
+gdown
+datasets
